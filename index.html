@@ -78,6 +78,15 @@
     font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; font-size: .8rem;
     letter-spacing: .22em; text-transform: uppercase; color: var(--onyx-orange-soft);
   }
+  .onyx-preload__track {
+    width: 180px; height: 3px; border-radius: 999px; overflow: hidden;
+    background: rgba(255,255,255,0.08);
+  }
+  .onyx-preload__fill {
+    display: block; height: 100%; width: 0%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--onyx-orange-soft), var(--onyx-orange));
+    transition: width .25s ease;
+  }
 
   /* noscript fallback: a plain, still, fully readable version of the page. */
   .onyx-noscript { background: var(--onyx-bg); color: var(--onyx-white); font-family: 'Inter', system-ui, sans-serif; }
@@ -92,7 +101,8 @@
 
   <div id="onyx-preload">
     <div class="onyx-preload__mark"></div>
-    <div class="onyx-preload__label">Entering Onyx</div>
+    <div class="onyx-preload__track"><span class="onyx-preload__fill" id="onyx-preload-fill"></span></div>
+    <div class="onyx-preload__label" id="onyx-preload-label">Entering Onyx</div>
   </div>
 
   <noscript>
@@ -128,7 +138,7 @@
 
   <script src="public/js/scrub-engine.js"></script>
   <script>
-    mountScrollWorld(document.getElementById('world'), {
+    const swConfig = {
       brand: { name: 'ONYX', href: '#top' },
       cta: { label: 'Launch App', href: '#vault' },
       hint: 'scroll to enter the network',
@@ -179,14 +189,96 @@
         'public/assets/scroll-world/connector-01-02.mp4',
         'public/assets/scroll-world/connector-02-03.mp4',
       ],
-    });
+    };
 
-    // Hide the preload screen once the engine + first poster have painted.
-    window.addEventListener('load', () => {
-      requestAnimationFrame(() => {
-        document.getElementById('onyx-preload').classList.add('is-hidden');
+    // ---- Preload gate: hold the loader up until the hero clip has actually
+    // finished loading (not just until the HTML/CSS/poster have painted). ----
+    (function () {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const preload = document.getElementById('onyx-preload');
+      const fill = document.getElementById('onyx-preload-fill');
+      const label = document.getElementById('onyx-preload-label');
+      const heroClipUrl = swConfig.sections[0] && swConfig.sections[0].clip;
+
+      let hidden = false;
+      function hidePreload() {
+        if (hidden) return;
+        hidden = true;
+        preload.classList.add('is-hidden');
+      }
+
+      function setProgress(frac) {
+        const pct = Math.round(Math.min(1, Math.max(0, frac)) * 100);
+        if (fill) fill.style.width = pct + '%';
+        if (label) label.textContent = pct < 100 ? `Entering Onyx — ${pct}%` : 'Entering Onyx';
+      }
+
+      let downloadDone = false, videoPaintable = false;
+      function maybeReveal() {
+        if (downloadDone && videoPaintable) hidePreload();
+      }
+
+      if (reduceMotion || !heroClipUrl) {
+        // Reduced motion never loads any clip (the engine keeps stills up and
+        // cross-dissolves instead), so there is nothing to wait for.
+        downloadDone = true; videoPaintable = true;
+        setTimeout(hidePreload, 250);
+      } else {
+        // Wrap fetch just for the hero clip's URL so we can report real byte
+        // progress, without double-fetching (the same Response we build here
+        // is what the engine's own loadClip() consumes via .blob()).
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = function (url, opts) {
+          if (url === heroClipUrl) {
+            window.fetch = nativeFetch; // one-shot: only this first request is tracked
+            return nativeFetch(url, opts).then(async (res) => {
+              if (!res.ok || !res.body) { downloadDone = true; maybeReveal(); return res; }
+              const total = Number(res.headers.get('Content-Length')) || 0;
+              const reader = res.body.getReader();
+              const chunks = [];
+              let loaded = 0;
+              try {
+                for (;;) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  chunks.push(value);
+                  loaded += value.length;
+                  if (total) setProgress(loaded / total);
+                }
+              } catch (e) { /* use whatever downloaded so far */ }
+              downloadDone = true;
+              setProgress(1);
+              maybeReveal();
+              return new Response(new Blob(chunks), { status: res.status, statusText: res.statusText, headers: res.headers });
+            }).catch((err) => { downloadDone = true; maybeReveal(); throw err; });
+          }
+          return nativeFetch(url, opts);
+        };
+
+        // Belt-and-suspenders: never hold a visitor hostage to a slow/broken
+        // connection — reveal the page (posters still show) after 18s regardless.
+        setTimeout(() => { downloadDone = true; videoPaintable = true; hidePreload(); }, 18000);
+      }
+
+      mountScrollWorld(document.getElementById('world'), swConfig);
+
+      // Confirm the hero clip can actually paint a frame, not just that its
+      // bytes arrived — this is what the engine itself waits for before
+      // swapping the poster image out for the <video>.
+      const heroScene = document.querySelectorAll('#world .sw-scene')[0];
+      if (!heroScene) { videoPaintable = true; maybeReveal(); return; }
+      const mo = new MutationObserver(() => {
+        const v = heroScene.querySelector('video');
+        if (!v) return;
+        mo.disconnect();
+        if (v.readyState >= 2) { videoPaintable = true; maybeReveal(); }
+        else {
+          v.addEventListener('loadeddata', () => { videoPaintable = true; maybeReveal(); }, { once: true });
+          v.addEventListener('error', () => { videoPaintable = true; maybeReveal(); }, { once: true });
+        }
       });
-    });
+      mo.observe(heroScene, { childList: true });
+    })();
   </script>
 </body>
 </html>
