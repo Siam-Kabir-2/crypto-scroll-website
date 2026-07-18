@@ -37,6 +37,14 @@
      Force their text back to the dark page background for real contrast. */
   .sw-topcta, .sw-btn--primary { color: var(--sw-bg); }
 
+  /* Same issue on the glass panels: the nav pill and the route-rail hover
+     label are frosted *light* glass (color-mix(#fff ...)) meant to sit under
+     dark ink text. Onyx's ink is light, so inactive nav items and the route
+     label rendered as light-on-light. Flip both panels to frosted dark glass
+     instead, which the existing light ink colours read on cleanly. */
+  .sw-nav { background: color-mix(in srgb, var(--sw-bg) 55%, transparent); }
+  .sw-route__label { background: color-mix(in srgb, var(--sw-bg) 82%, transparent); }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--onyx-bg); }
   body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
