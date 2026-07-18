@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Onyx — Fly Into The Network</title>
+<meta name="description" content="Onyx is the always-on settlement network beneath a new financial city. Scroll to fly through the gateway, the core, and the vault." />
+<meta name="theme-color" content="#07070a" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307070a'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%23ff6a1a' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ff6a1a'/%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  /* ---- Onyx brand theme: premium black / white / orange -----------------
+     Unlayered, so it wins cleanly over the engine's own @layer sw defaults. */
+  :root, .sw-root {
+    --sw-bg: #07070a;
+    --sw-ink: #f4f4f6;
+    --sw-ink-soft: #8b8b96;
+    --sw-accent: #ff6a1a;
+    --sw-font-display: 'Space Grotesk', ui-rounded, "Segoe UI", system-ui, sans-serif;
+    --sw-font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+
+    /* Onyx-specific tokens used by the loader / preload screen below. */
+    --onyx-bg: #07070a;
+    --onyx-orange: #ff6a1a;
+    --onyx-orange-soft: #ffa066;
+    --onyx-white: #f4f4f6;
+  }
+
+  /* The engine's "solid ink" pills (top-bar CTA, primary copy button) hardcode
+     white text on a `var(--sw-ink)` fill — correct for the engine's default
+     *light* theme, where --sw-ink is a dark colour. Onyx is a dark theme, so
+     --sw-ink is near-white, which made these render as white-on-near-white.
+     Force their text back to the dark page background for real contrast. */
+  .sw-topcta, .sw-btn--primary { color: var(--sw-bg); }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--onyx-bg); }
+  body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+  /* A quiet grain + vignette over the whole experience — reads as premium
+     material without competing with the generated cinematography. */
+  .onyx-grain {
+    position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .onyx-vignette {
+    position: fixed; inset: 0; z-index: 6; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
+  }
+
+  /* Preload screen: shown until the engine mounts, avoids a flash of
+     unstyled content on slower connections. */
+  #onyx-preload {
+    position: fixed; inset: 0; z-index: 999; background: var(--onyx-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    transition: opacity .5s ease, visibility .5s ease;
+  }
+  #onyx-preload.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .onyx-preload__mark {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 2.5px solid rgba(255,106,26,0.25); border-top-color: var(--onyx-orange);
+    animation: onyx-spin 0.9s linear infinite;
+  }
+  @keyframes onyx-spin { to { transform: rotate(360deg); } }
+  .onyx-preload__label {
+    font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 600; font-size: .8rem;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--onyx-orange-soft);
+  }
+
+  /* noscript fallback: a plain, still, fully readable version of the page. */
+  .onyx-noscript { background: var(--onyx-bg); color: var(--onyx-white); font-family: 'Inter', system-ui, sans-serif; }
+  .onyx-noscript__section { min-height: 100vh; display: flex; align-items: center; padding: 6vw; background-size: cover; background-position: center; position: relative; }
+  .onyx-noscript__section::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,7,10,.92), rgba(7,7,10,.45)); }
+  .onyx-noscript__copy { position: relative; max-width: 520px; }
+  .onyx-noscript__eyebrow { color: var(--onyx-orange); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: .8rem; }
+  .onyx-noscript__title { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: clamp(2rem, 4vw, 3.2rem); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+  <div id="onyx-preload">
+    <div class="onyx-preload__mark"></div>
+    <div class="onyx-preload__label">Entering Onyx</div>
+  </div>
+
+  <noscript>
+    <div class="onyx-noscript">
+      <section class="onyx-noscript__section" style="background-image:url('public/assets/scroll-world/scene-01.jpg')">
+        <div class="onyx-noscript__copy">
+          <div class="onyx-noscript__eyebrow">Enter the network</div>
+          <h1 class="onyx-noscript__title">A new financial city never sleeps.</h1>
+          <p>Onyx is the always-on settlement network beneath a new global economy — every street built from settlement, every light a live transaction.</p>
+        </div>
+      </section>
+      <section class="onyx-noscript__section" style="background-image:url('public/assets/scroll-world/scene-02.jpg')">
+        <div class="onyx-noscript__copy">
+          <div class="onyx-noscript__eyebrow">Where consensus is forged</div>
+          <h1 class="onyx-noscript__title">Every block, verified at the core.</h1>
+          <p>Beneath the surface, a distributed engine validates, secures and settles value in real time — audited by code, not by trust.</p>
+        </div>
+      </section>
+      <section class="onyx-noscript__section" style="background-image:url('public/assets/scroll-world/scene-03.jpg')">
+        <div class="onyx-noscript__copy">
+          <div class="onyx-noscript__eyebrow">Built to hold value</div>
+          <h1 class="onyx-noscript__title">One vault. Absolute custody.</h1>
+          <p>This is where it all arrives — your assets, secured behind cryptography stronger than any physical wall.</p>
+        </div>
+      </section>
+    </div>
+  </noscript>
+
+  <div id="top"></div>
+  <div id="world"></div>
+  <div class="onyx-grain"></div>
+  <div class="onyx-vignette"></div>
+
+  <script src="public/js/scrub-engine.js"></script>
+  <script>
+    mountScrollWorld(document.getElementById('world'), {
+      brand: { name: 'ONYX', href: '#top' },
+      cta: { label: 'Launch App', href: '#vault' },
+      hint: 'scroll to enter the network',
+      diveScroll: 1.3,
+      connScroll: 0.9,
+
+      sections: [
+        {
+          id: 'gateway', label: 'The Gateway',
+          still: 'public/assets/scroll-world/scene-01.jpg',
+          clip: 'public/assets/scroll-world/scene-01.mp4',
+          accent: '#ff6a1a',
+          scroll: 1.5, linger: 0.4,
+          eyebrow: 'Enter the network',
+          title: 'A new financial city never sleeps.',
+          body: 'Onyx is the always-on infrastructure beneath a new global economy — every street built from settlement, every light a live transaction.',
+          tags: ['Global', '24/7 Settlement', 'Zero Downtime'],
+        },
+        {
+          id: 'core', label: 'The Core',
+          still: 'public/assets/scroll-world/scene-02.jpg',
+          clip: 'public/assets/scroll-world/scene-02.mp4',
+          accent: '#ff6a1a',
+          scroll: 1.3,
+          eyebrow: 'Where consensus is forged',
+          title: 'Every block, verified at the core.',
+          body: 'Beneath the surface, a distributed engine validates, secures, and settles value in real time — audited by code, not by trust.',
+          tags: ['Cryptographic Proof', 'Real-Time Audit', 'Institutional Grade'],
+        },
+        {
+          id: 'vault', label: 'The Vault',
+          still: 'public/assets/scroll-world/scene-03.jpg',
+          clip: 'public/assets/scroll-world/scene-03.mp4',
+          accent: '#ff6a1a',
+          scroll: 1.6, linger: 0.45,
+          eyebrow: 'Built to hold value',
+          title: 'One vault. Absolute custody.',
+          body: 'This is where it all arrives — your assets, secured behind cryptography stronger than any physical wall, ready the instant you need them.',
+          tags: ['Self-Custody', 'Multi-Sig', 'Cold-Grade Security'],
+          cta: {
+            primary: { label: 'Launch App', href: '#' },
+            secondary: { label: 'Read the Docs', href: '#' },
+          },
+        },
+      ],
+
+      connectors: [
+        'public/assets/scroll-world/connector-01-02.mp4',
+        'public/assets/scroll-world/connector-02-03.mp4',
+      ],
+    });
+
+    // Hide the preload screen once the engine + first poster have painted.
+    window.addEventListener('load', () => {
+      requestAnimationFrame(() => {
+        document.getElementById('onyx-preload').classList.add('is-hidden');
+      });
+    });
+  </script>
+</body>
+</html>

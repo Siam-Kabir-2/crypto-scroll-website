@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Vercel / Netlify local metadata
+.vercel/
+.netlify/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local QA/scratch artifacts (screenshots, throwaway scripts)
+qa/
+.agents/
